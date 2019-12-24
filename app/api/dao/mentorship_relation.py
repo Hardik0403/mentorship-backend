@@ -183,6 +183,10 @@ class MentorshipRelationDAO:
             if request.state == MentorshipRelationState.ACCEPTED:
                 return messages.USER_IS_INVOLVED_IN_A_MENTORSHIP_RELATION, 400
 
+        # verify if user is involved in other mentorship relation
+        if (not(user.current_mentorship_role is None)):
+            return messages.CANT_ACCEPT_WHILE_IN_A_RELATION, 400
+
         # All was checked
         request.state = MentorshipRelationState.ACCEPTED
         request.save_to_db()

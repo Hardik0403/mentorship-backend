@@ -53,7 +53,15 @@ class TestMentorshipRelationAcceptRequestDAO(MentorshipRelationBaseTestCase):
 
         result = DAO.accept_request(self.first_user.id, self.mentorship_relation.id)
 
-        self.assertEqual((messages.CANT_ACCEPT_MENTOR_REQ_SENT_BY_USER, 400), result)
+        # If a user tries to accepts a request where he is not involved, then
+        # '400:Bad Request' error would be given displaying the message that 'You cannot accept a mentorship relation where you are not involved.'.
+        if (self.mentorship_relation.mentor_id != self.first_user.id and self.mentorship_relation.mentee_id != self.first_user.id):
+            self.assertEqual((messages.CANT_ACCEPT_UNINVOLVED_MENTOR_RELATION, 400), result)
+        # If a user tries to accepts a request sent by him, then
+        # '400:Bad Request' error would be given displaying the message that 'You cannot accept a mentorship request sent by yourself.'.
+        elif (self.mentorship_relation.action_user_id == self.first_user.id):
+            self.assertEqual((messages.CANT_ACCEPT_MENTOR_REQ_SENT_BY_USER, 400), result)
+
         self.assertEqual(MentorshipRelationState.PENDING, self.mentorship_relation.state)
 
     def test_dao_receiver_accepts_mentorship_request(self):
@@ -61,8 +69,15 @@ class TestMentorshipRelationAcceptRequestDAO(MentorshipRelationBaseTestCase):
 
         result = DAO.accept_request(self.second_user.id, self.mentorship_relation.id)
 
-        self.assertEqual((messages.MENTORSHIP_RELATION_WAS_ACCEPTED_SUCCESSFULLY, 200), result)
-        self.assertEqual(MentorshipRelationState.ACCEPTED, self.mentorship_relation.state)
+    # If the receiver tries to accepts a request while he is in another mentorship request, then
+    # '400:Bad Request' error would be given displaying the message that 'You cannot accept a mentorship relation while you are already in another mentorship relation'.
+    # else, the request would be accepted.
+        if (not(self.second_user.current_mentorship_role is None)):
+            self.assertEqual((messages.CANT_ACCEPT_WHILE_IN_A_RELATION, 400), result)
+            self.assertEqual(MentorshipRelationState.PENDING, self.mentorship_relation.state)
+        else:
+            self.assertEqual((messages.MENTORSHIP_RELATION_WAS_ACCEPTED_SUCCESSFULLY, 200), result)
+            self.assertEqual(MentorshipRelationState.ACCEPTED, self.mentorship_relation.state)
 
     def test_dao_sender_does_not_exist_mentorship_request(self):
         DAO = MentorshipRelationDAO()

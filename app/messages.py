@@ -90,6 +90,9 @@ CANT_ACCEPT_MENTOR_REQ_SENT_BY_USER = {"message": "You cannot accept a"
 CANT_ACCEPT_UNINVOLVED_MENTOR_RELATION = {"message": "You cannot accept a"
                                           " mentorship relation where you are"
                                           " not involved."}
+CANT_ACCEPT_WHILE_IN_A_RELATION = {"message": "You cannot accept a "
+                                    "mentorship relation while you are"
+                                    "already in another mentorship relation"}                                                
 USER_CANT_REJECT_REQUEST_SENT_BY_USER = {"message": "You cannot reject a"
                                        " mentorship request sent by yourself."}
 CANT_REJECT_UNINVOLVED_RELATION_REQUEST = {"message": "You cannot reject a"
