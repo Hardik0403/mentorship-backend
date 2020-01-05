@@ -9,6 +9,8 @@ def add_models_to_namespace(api_namespace):
     api_namespace.models[relation_user_response_body.name] = relation_user_response_body
     api_namespace.models[create_task_request_body.name] = create_task_request_body
     api_namespace.models[list_tasks_response_body.name] = list_tasks_response_body
+    api_namespace.models[dashboard.name] = dashboard
+    api_namespace.models[dashboard_request.name] = dashboard_request
 
 
 send_mentorship_request_body = Model('Send mentorship relation request model', {
@@ -47,4 +49,19 @@ list_tasks_response_body = Model('List tasks response model', {
     'is_done': fields.Boolean(required=True, description='Mentorship relation task is done indication'),
     'created_at': fields.Float(required=True, description='Task creation date in UNIX timestamp format'),
     'completed_at': fields.Float(required=False, description='Task completion date in UNIX timestamp format')
+})
+
+dashboard_request = Model('Dashboard Request', {
+    'name': fields.String(required=True, description='User name'),
+    'photo_url': fields.String(required=False, description='User photo url'),
+    'creation_date': fields.Float(required=True, description='Mentorship relation creation date in UNIX timestamp format')
+})
+
+dashboard = Model('DashboardModel', {
+    'received_as_mentee': fields.Nested(dashboard_request),
+    'sent_as_mentee': fields.Nested(dashboard_request),
+    'received_as_mentor': fields.Nested(dashboard_request),
+    'sent_as_mentor': fields.Nested(dashboard_request),
+    'todo_tasks': fields.Nested(list_tasks_response_body),
+    'done_tasks': fields.Nested(list_tasks_response_body)
 })

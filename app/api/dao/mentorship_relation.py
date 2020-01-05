@@ -6,6 +6,7 @@ from app.database.models.tasks_list import TasksListModel
 from app.database.models.user import UserModel
 from app.utils.decorator_utils import email_verification_required
 from app.utils.enum_utils import MentorshipRelationState
+from app.api.dao.task import TaskDAO
 
 class MentorshipRelationDAO:
     """Data Access Object for mentorship relation functionalities.
@@ -143,6 +144,85 @@ class MentorshipRelationDAO:
             setattr(relation, 'sent_by_me', relation.action_user_id == user_id)
 
         return all_relations, 200
+
+    @staticmethod
+    @email_verification_required
+    def user_dashboard(user_id):
+
+        user = UserModel.find_by_id(user_id)
+        mentor_relations = user.mentor_relations
+        mentee_relations = user.mentee_relations
+
+        todo = []
+        done = []
+
+        for rel in mentor_relations:
+            setattr(rel, 'sent_by_me', rel.action_user_id == user_id)
+            task_list = TaskDAO.list_tasks(user_id, rel.id)
+            if isinstance(task_list, list):
+                for task in task_list:
+                    print(task)
+                    if task['is_done']:
+                        done.append(task)
+                    else:
+                        todo.append(task)
+
+        for rel in mentee_relations:
+            setattr(rel, 'sent_by_me', rel.action_user_id == user_id)
+            task_list = TaskDAO.list_tasks(user_id, rel.id)
+            if isinstance(task_list, list):
+                for task in task_list:
+                    if task['is_done']:
+                        done.append(task)
+                    else:
+                        todo.append(task)
+
+        received_as_mentee = list(filter(lambda rel: not rel.sent_by_me, mentee_relations))
+        received_as_mentor = list(filter(lambda rel: not rel.sent_by_me, mentor_relations))
+        sent_as_mentee = list(filter(lambda rel: rel.sent_by_me, mentee_relations))
+        sent_as_mentor = list(filter(lambda rel: rel.sent_by_me, mentor_relations))
+
+        response = [received_as_mentee,sent_as_mentee, received_as_mentor, sent_as_mentor]
+        for i in range(0,4):
+            res = response[i]
+            pending = []
+            accepted = []
+            rejected = []
+            cancelled = []
+            completed = []
+            for rel in res:
+                rel_dash = {}
+                rel_dash['name'] = user.name
+                rel_dash['photo_url'] = user.photo_url
+                rel_dash['creation_date'] = rel.creation_date
+                if rel.state == MentorshipRelationState.PENDING:
+                    pending.append(rel_dash)
+                if rel.state == MentorshipRelationState.ACCEPTED:
+                    accepted.append(rel_dash)
+                if rel.state == MentorshipRelationState.REJECTED:
+                    rejected.append(rel_dash)
+                if rel.state == MentorshipRelationState.CANCELLED:
+                    cancelled.append(rel_dash)
+                if rel.state == MentorshipRelationState.COMPLETED:
+                    completed.append(rel_dash)
+            response[i].clear()
+            pending.sort(key = lambda rel: rel['creation_date'])
+            accepted.sort(key = lambda rel: rel['creation_date'])
+            rejected.sort(key = lambda rel: rel['creation_date'])
+            cancelled.sort(key = lambda rel: rel['creation_date'])
+            completed.sort(key = lambda rel: rel['creation_date'])
+            response[i] = [pending, accepted, rejected, cancelled, completed]
+
+
+        obj = {}
+        obj['received_as_mentee'] = response[0]
+        obj['sent_as_mentee'] = response[1]
+        obj['received_as_mentor'] = response[2]
+        obj['sent_as_mentor'] = response[3]
+        obj['todo_tasks'] = todo
+        obj['done_tasks'] = done
+
+        return obj, 200
 
     @staticmethod
     @email_verification_required

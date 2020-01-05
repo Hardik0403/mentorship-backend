@@ -335,3 +335,21 @@ class UpdateTask(Resource):
         response = TaskDAO.complete_task(user_id=user_id, mentorship_relation_id=request_id, task_id=task_id)
 
         return response
+
+@mentorship_relation_ns.route('dashboard')
+class UserDashboard(Resource):
+
+    @classmethod
+    @jwt_required
+    @mentorship_relation_ns.doc('get_user_dashboard')
+    @mentorship_relation_ns.expect(auth_header_parser)
+    @mentorship_relation_ns.response(200, 'USER DASHBOARD', model=dashboard)
+    @mentorship_relation_ns.marshal_list_with(dashboard)
+    def get(cls):
+        """
+
+        """
+
+        user_id = get_jwt_identity()
+        all_relations = DAO.user_dashboard(user_id)
+        return all_relations
